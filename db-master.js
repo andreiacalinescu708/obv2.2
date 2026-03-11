@@ -2,29 +2,34 @@
 const { Pool } = require("pg");
 const crypto = require("crypto");
 
-const MASTER_DB_URL = process.env.MASTER_DATABASE_URL || process.env.DATABASE_URL;
-
 let masterPool = null;
 
-if (MASTER_DB_URL) {
-  masterPool = new Pool({
-    connectionString: MASTER_DB_URL,
-    ssl: { rejectUnauthorized: false }
-  });
+function getMasterPool() {
+  if (!masterPool) {
+    const MASTER_DB_URL = process.env.MASTER_DATABASE_URL || process.env.DATABASE_URL;
+    if (MASTER_DB_URL) {
+      masterPool = new Pool({
+        connectionString: MASTER_DB_URL,
+        ssl: { rejectUnauthorized: false }
+      });
+    }
+  }
+  return masterPool;
 }
 
 function hasMasterDb() {
-  return !!masterPool;
+  return !!getMasterPool();
 }
 
 async function q(text, params) {
-  if (!masterPool) throw new Error("MASTER_DATABASE_URL lipsă.");
-  return masterPool.query(text, params);
+  const pool = getMasterPool();
+  if (!pool) throw new Error("MASTER_DATABASE_URL lipsă.");
+  return pool.query(text, params);
 }
 
 // Inițializare tabele master
 async function ensureMasterTables() {
-  if (!masterPool) return;
+  if (!getMasterPool()) return;
 
   // Tabel companii
   await q(`
