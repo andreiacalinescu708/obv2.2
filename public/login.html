@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autentificare - OpenBill</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 400px;
+      padding: 3rem;
+    }
+    
+    .logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .logo h1 {
+      color: #4F46E5;
+      font-size: 1.5rem;
+    }
+    
+    .company-name {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #374151;
+    }
+    
+    input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #4F46E5;
+    }
+    
+    .btn-primary {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    
+    .hidden { display: none; }
+    
+    .back-link {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+    
+    .back-link a {
+      color: #4F46E5;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <h1>📦 OpenBill</h1>
+    </div>
+    
+    <div class="company-name" id="companyName">Se încarcă...</div>
+    
+    <div id="error" class="error hidden"></div>
+    
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" required autofocus>
+      </div>
+      
+      <div class="form-group">
+        <label for="password">Parolă</label>
+        <input type="password" id="password" required>
+      </div>
+      
+      <button type="submit" class="btn-primary" id="submitBtn">
+        Autentificare
+      </button>
+    </form>
+    
+    <div class="back-link">
+      <a href="/">← Înapoi la pagina principală</a>
+    </div>
+  </div>
+  
+  <script>
+    // Detectează compania din URL
+    const host = window.location.hostname;
+    const parts = host.split('.');
+    const slug = parts.length >= 2 ? parts[0] : null;
+    
+    if (slug && slug !== 'www' && slug !== 'openbill') {
+      document.getElementById('companyName').textContent = slug.toUpperCase();
+    } else {
+      document.getElementById('companyName').textContent = 'OpenBill';
+    }
+    
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const errorDiv = document.getElementById('error');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      errorDiv.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Se procesează...';
+      
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+          window.location.href = '/dashboard.html';
+        } else {
+          errorDiv.textContent = data.error || 'Eroare la autentificare';
+          errorDiv.classList.remove('hidden');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Autentificare';
+        }
+      } catch {
+        errorDiv.textContent = 'Eroare de conexiune. Încearcă din nou.';
+        errorDiv.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Autentificare';
+      }
+    });
+  </script>
+</body>
+</html>

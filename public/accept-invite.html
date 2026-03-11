@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceptă Invitația - OpenBill</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 500px;
+      padding: 3rem;
+    }
+    
+    .logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .logo h1 {
+      color: #4F46E5;
+      font-size: 1.5rem;
+    }
+    
+    h2 {
+      text-align: center;
+      margin-bottom: 0.5rem;
+      color: #1f2937;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 2rem;
+    }
+    
+    .company-info {
+      background: #f3f4f6;
+      padding: 1rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    
+    .company-info strong {
+      color: #4F46E5;
+      font-size: 1.1rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #374151;
+    }
+    
+    input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #4F46E5;
+    }
+    
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    
+    .btn-primary {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    
+    .hidden { display: none; }
+    
+    .expired {
+      text-align: center;
+      padding: 2rem;
+    }
+    
+    .expired-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+    
+    @media (max-width: 500px) {
+      .container { padding: 2rem; }
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <h1>📦 OpenBill</h1>
+    </div>
+    
+    <div id="loading">
+      <p style="text-align: center; color: #6b7280;">Se verifică invitația...</p>
+    </div>
+    
+    <div id="expired" class="expired hidden">
+      <div class="expired-icon">⏰</div>
+      <h2>Invitație Expirată</h2>
+      <p style="color: #6b7280; margin-top: 1rem;">
+        Acest link de invitație a expirat sau este invalid.<br>
+        Contactează administratorul companiei pentru o nouă invitație.
+      </p>
+    </div>
+    
+    <div id="form" class="hidden">
+      <h2>Acceptă Invitația</h2>
+      <p class="subtitle">Completează datele pentru a-ți crea contul</p>
+      
+      <div class="company-info">
+        Te invită să te alături:<br>
+        <strong id="companyName">-</strong>
+      </div>
+      
+      <div id="error" class="error hidden"></div>
+      
+      <form id="acceptForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" readonly style="background: #f3f4f6;">
+        </div>
+        
+        <div class="row">
+          <div class="form-group">
+            <label for="firstName">Prenume</label>
+            <input type="text" id="firstName" placeholder="Ion">
+          </div>
+          <div class="form-group">
+            <label for="lastName">Nume</label>
+            <input type="text" id="lastName" placeholder="Popescu">
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="username">Username *</label>
+          <input type="text" id="username" required placeholder="ion.popescu">
+        </div>
+        
+        <div class="form-group">
+          <label for="function">Funcție</label>
+          <input type="text" id="function" placeholder="Ex: Șofer, Agent vânzări">
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Parolă *</label>
+          <input type="password" id="password" required minlength="6" placeholder="Minim 6 caractere">
+        </div>
+        
+        <div class="form-group">
+          <label for="confirmPassword">Confirmă Parola *</label>
+          <input type="password" id="confirmPassword" required placeholder="Repetă parola">
+        </div>
+        
+        <button type="submit" class="btn-primary" id="submitBtn">
+          Creează Contul
+        </button>
+      </form>
+    </div>
+    
+    <div id="success" class="hidden" style="text-align: center; padding: 2rem;">
+      <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+      <h3>Cont Creat cu Succes!</h3>
+      <p style="margin: 1rem 0; color: #6b7280;">
+        Acum te poți autentifica în aplicație.
+      </p>
+      <a id="loginLink" href="#" class="btn-primary" style="display: inline-block; text-decoration: none;">
+        Mergi la Login
+      </a>
+    </div>
+  </div>
+  
+  <script>
+    // Extrage token din URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    let inviteData = null;
+    
+    if (!token) {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('expired').classList.remove('hidden');
+    } else {
+      // Verifică invitația
+      fetch(`/api/invitations/verify/${token}`)
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById('loading').classList.add('hidden');
+          
+          if (data.valid) {
+            inviteData = data;
+            document.getElementById('form').classList.remove('hidden');
+            document.getElementById('companyName').textContent = data.companyName;
+            document.getElementById('email').value = data.email;
+            document.getElementById('loginLink').href = `https://${data.companySlug}.openbill.ro/login.html`;
+          } else {
+            document.getElementById('expired').classList.remove('hidden');
+          }
+        })
+        .catch(() => {
+          document.getElementById('loading').classList.add('hidden');
+          document.getElementById('expired').classList.remove('hidden');
+        });
+    }
+    
+    // Submit form
+    document.getElementById('acceptForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const errorDiv = document.getElementById('error');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      errorDiv.classList.add('hidden');
+      
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      
+      if (password !== confirmPassword) {
+        errorDiv.textContent = 'Parolele nu coincid';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Se procesează...';
+      
+      try {
+        const res = await fetch(`/api/invitations/accept/${token}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('username').value,
+            password: password,
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            function: document.getElementById('function').value
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          document.getElementById('form').classList.add('hidden');
+          document.getElementById('success').classList.remove('hidden');
+        } else {
+          errorDiv.textContent = data.error || 'Eroare la crearea contului';
+          errorDiv.classList.remove('hidden');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Creează Contul';
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Eroare de conexiune. Încearcă din nou.';
+        errorDiv.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Creează Contul';
+      }
+    });
+  </script>
+</body>
+</html>

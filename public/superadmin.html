@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SuperAdmin - OpenBill</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f3f4f6;
+      min-height: 100vh;
+    }
+    
+    header {
+      background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .logo {
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .btn {
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.3s;
+    }
+    
+    .btn-danger {
+      background: #EF4444;
+      color: white;
+    }
+    
+    .btn-primary {
+      background: #4F46E5;
+      color: white;
+    }
+    
+    .btn-success {
+      background: #10B981;
+      color: white;
+    }
+    
+    .btn-warning {
+      background: #F59E0B;
+      color: white;
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    /* Stats Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+      background: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .stat-card h3 {
+      font-size: 0.875rem;
+      color: #6b7280;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #1f2937;
+    }
+    
+    .stat-card.trial { border-left: 4px solid #F59E0B; }
+    .stat-card.active { border-left: 4px solid #10B981; }
+    .stat-card.suspended { border-left: 4px solid #EF4444; }
+    
+    /* Actions Bar */
+    .actions-bar {
+      background: white;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    /* Table */
+    .table-container {
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+    }
+    
+    tr:hover {
+      background: #f9fafb;
+    }
+    
+    .status-badge {
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    
+    .status-trial { background: #fef3c7; color: #92400e; }
+    .status-active { background: #d1fae5; color: #065f46; }
+    .status-suspended { background: #fee2e2; color: #991b1b; }
+    .status-cancelled { background: #e5e7eb; color: #374151; }
+    
+    .actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .actions button {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.875rem;
+    }
+    
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .modal {
+      background: white;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    
+    .modal-body {
+      padding: 1.5rem;
+    }
+    
+    .modal-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #374151;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 0.625rem 0.875rem;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: #4F46E5;
+      ring: 2px solid #e0e7ff;
+    }
+    
+    .hidden { display: none !important; }
+    
+    /* Login Form */
+    .login-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+    }
+    
+    .login-box {
+      background: white;
+      padding: 3rem;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+    }
+    
+    .login-box h2 {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    
+    .error-message {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="loginScreen" class="login-container">
+    <div class="login-box">
+      <h2>🔐 SuperAdmin</h2>
+      <div id="loginError" class="error-message hidden"></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="loginUsername" required>
+        </div>
+        <div class="form-group">
+          <label>Parolă</label>
+          <input type="password" id="loginPassword" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem;">
+          Autentificare
+        </button>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Main App -->
+  <div id="mainApp" class="hidden">
+    <header>
+      <div class="logo">📦 OpenBill SuperAdmin</div>
+      <div class="user-info">
+        <span id="adminName">alex1</span>
+        <button class="btn btn-danger" onclick="logout()">Logout</button>
+      </div>
+    </header>
+    
+    <div class="container">
+      <!-- Stats -->
+      <div class="stats-grid">
+        <div class="stat-card trial">
+          <h3>În Trial</h3>
+          <div class="value" id="statTrial">0</div>
+        </div>
+        <div class="stat-card active">
+          <h3>Active</h3>
+          <div class="value" id="statActive">0</div>
+        </div>
+        <div class="stat-card suspended">
+          <h3>Suspendate</h3>
+          <div class="value" id="statSuspended">0</div>
+        </div>
+        <div class="stat-card">
+          <h3>Total</h3>
+          <div class="value" id="statTotal">0</div>
+        </div>
+      </div>
+      
+      <!-- Actions -->
+      <div class="actions-bar">
+        <h2 style="font-size: 1.25rem;">Companii</h2>
+        <button class="btn btn-primary" onclick="showCreateModal()">+ Adaugă Companie</button>
+      </div>
+      
+      <!-- Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Companie</th>
+              <th>URL</th>
+              <th>CUI</th>
+              <th>Status</th>
+              <th>Trial Expiră</th>
+              <th>Acțiuni</th>
+            </tr>
+          </thead>
+          <tbody id="companiesTable">
+            <!-- Populat din JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Create Company Modal -->
+  <div id="createModal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Adaugă Companie Nouă</h3>
+      </div>
+      <form id="createForm">
+        <div class="modal-body">
+          <div id="createError" class="error-message hidden"></div>
+          
+          <div class="form-group">
+            <label>Denumire Firmă *</label>
+            <input type="text" id="compName" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Slug (URL) *</label>
+            <input type="text" id="compSlug" required placeholder="ex: firma-mea">
+            <small style="color: #6b7280;">Va fi: firma-mea.openbill.ro</small>
+          </div>
+          
+          <div class="form-group">
+            <label>CUI/CIF *</label>
+            <input type="text" id="compCui" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" id="compEmail" required>
+          </div>
+          
+          <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid #e5e7eb;">
+          
+          <h4 style="margin-bottom: 1rem;">Date Admin</h4>
+          
+          <div class="form-group">
+            <label>Username Admin *</label>
+            <input type="text" id="adminUser" required>
+          </div>
+          
+          <div class="form-group">
+            <label>Parolă Admin *</label>
+            <input type="password" id="adminPass" required minlength="6">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="hideCreateModal()" style="background: #e5e7eb;">Anulează</button>
+          <button type="submit" class="btn btn-primary">Creează Compania</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <script>
+    let companies = [];
+    
+    // Verifică sesiunea la încărcare
+    async function checkSession() {
+      try {
+        const res = await fetch('/api/superadmin/me');
+        const data = await res.json();
+        
+        if (data.loggedIn) {
+          showMainApp();
+        } else {
+          showLogin();
+        }
+      } catch {
+        showLogin();
+      }
+    }
+    
+    function showLogin() {
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('mainApp').classList.add('hidden');
+    }
+    
+    function showMainApp() {
+      document.getElementById('loginScreen').classList.add('hidden');
+      document.getElementById('mainApp').classList.remove('hidden');
+      loadData();
+    }
+    
+    // Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorDiv = document.getElementById('loginError');
+      errorDiv.classList.add('hidden');
+      
+      try {
+        const res = await fetch('/api/superadmin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: document.getElementById('loginUsername').value,
+            password: document.getElementById('loginPassword').value
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (data.ok) {
+          showMainApp();
+        } else {
+          errorDiv.textContent = data.error || 'Eroare la autentificare';
+          errorDiv.classList.remove('hidden');
+        }
+      } catch {
+        errorDiv.textContent = 'Eroare de conexiune';
+        errorDiv.classList.remove('hidden');
+      }
+    });
+    
+    // Logout
+    async function logout() {
+      await fetch('/api/superadmin/logout', { method: 'POST' });
+      showLogin();
+    }
+    
+    // Load data
+    async function loadData() {
+      try {
+        // Stats
+        const statsRes = await fetch('/api/superadmin/stats');
+        const stats = await statsRes.json();
+        document.getElementById('statTrial').textContent = stats.trial;
+        document.getElementById('statActive').textContent = stats.active;
+        document.getElementById('statSuspended').textContent = stats.suspended;
+        document.getElementById('statTotal').textContent = stats.total;
+        
+        // Companies
+        const compRes = await fetch('/api/superadmin/companies');
+        companies = await compRes.json();
+        renderCompanies();
+      } catch (err) {
+        console.error('Error loading data:', err);
+      }
+    }
+    
+    function renderCompanies() {
+      const tbody = document.getElementById('companiesTable');
+      tbody.innerHTML = companies.map(c => `
+        <tr>
+          <td><strong>${c.name}</strong></td>
+          <td><a href="https://${c.slug}.openbill.ro" target="_blank">${c.slug}.openbill.ro</a></td>
+          <td>${c.cui || '-'}</td>
+          <td><span class="status-badge status-${c.status}">${c.status}</span></td>
+          <td>${new Date(c.trial_expires_at).toLocaleDateString('ro-RO')}</td>
+          <td class="actions">
+            ${c.status === 'trial' || c.status === 'suspended' ? 
+              `<button class="btn btn-success" onclick="changeStatus('${c.id}', 'active')">Activează</button>` : ''}
+            ${c.status === 'active' ? 
+              `<button class="btn btn-warning" onclick="changeStatus('${c.id}', 'suspended')">Suspendă</button>` : ''}
+            <button class="btn btn-danger" onclick="changeStatus('${c.id}', 'cancelled')">Șterge</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+    
+    async function changeStatus(id, status) {
+      if (!confirm(`Sigur vrei să ${status === 'cancelled' ? 'ștergi' : 'modifici statusul'} acestei companii?`)) return;
+      
+      try {
+        const res = await fetch(`/api/superadmin/companies/${id}/status`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+        
+        if (res.ok) {
+          loadData();
+        }
+      } catch (err) {
+        alert('Eroare la actualizare');
+      }
+    }
+    
+    // Create Modal
+    function showCreateModal() {
+      document.getElementById('createModal').classList.remove('hidden');
+    }
+    
+    function hideCreateModal() {
+      document.getElementById('createModal').classList.add('hidden');
+      document.getElementById('createForm').reset();
+    }
+    
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorDiv = document.getElementById('createError');
+      errorDiv.classList.add('hidden');
+      
+      try {
+        const res = await fetch('/api/superadmin/companies', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: document.getElementById('compName').value,
+            slug: document.getElementById('compSlug').value,
+            cui: document.getElementById('compCui').value,
+            email: document.getElementById('compEmail').value,
+            adminUsername: document.getElementById('adminUser').value,
+            adminPassword: document.getElementById('adminPass').value
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          hideCreateModal();
+          loadData();
+          alert(`Companie creată! URL: ${data.url}`);
+        } else {
+          errorDiv.textContent = data.error || 'Eroare la creare';
+          errorDiv.classList.remove('hidden');
+        }
+      } catch {
+        errorDiv.textContent = 'Eroare de conexiune';
+        errorDiv.classList.remove('hidden');
+      }
+    });
+    
+    // Initialize
+    checkSession();
+  </script>
+</body>
+</html>

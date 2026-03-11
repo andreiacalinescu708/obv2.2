@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Înregistrare Companie - OpenBill</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 600px;
+      padding: 3rem;
+    }
+    
+    .logo {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    
+    .logo h1 {
+      color: #4F46E5;
+      font-size: 2rem;
+    }
+    
+    h2 {
+      text-align: center;
+      margin-bottom: 0.5rem;
+      color: #1f2937;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #6b7280;
+      margin-bottom: 2rem;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #374151;
+    }
+    
+    input, select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s;
+    }
+    
+    input:focus, select:focus {
+      outline: none;
+      border-color: #4F46E5;
+    }
+    
+    .slug-input-wrapper {
+      display: flex;
+      align-items: center;
+    }
+    
+    .slug-input {
+      flex: 1;
+      border-radius: 10px 0 0 10px;
+    }
+    
+    .slug-suffix {
+      background: #f3f4f6;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e5e7eb;
+      border-left: none;
+      border-radius: 0 10px 10px 0;
+      color: #6b7280;
+      font-weight: 500;
+    }
+    
+    .slug-status {
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+    
+    .slug-available { color: #10B981; }
+    .slug-taken { color: #EF4444; }
+    
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    
+    .btn-primary {
+      width: 100%;
+      padding: 1rem;
+      background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+    }
+    
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .trial-badge {
+      text-align: center;
+      background: #d1fae5;
+      color: #065f46;
+      padding: 0.75rem;
+      border-radius: 10px;
+      margin-bottom: 2rem;
+      font-weight: 600;
+    }
+    
+    .back-link {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+    
+    .back-link a {
+      color: #4F46E5;
+      text-decoration: none;
+    }
+    
+    .error {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    
+    .success {
+      background: #d1fae5;
+      color: #065f46;
+      padding: 1rem;
+      border-radius: 10px;
+      margin-bottom: 1rem;
+    }
+    
+    .hidden { display: none; }
+    
+    @media (max-width: 600px) {
+      .container { padding: 2rem; }
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <h1>📦 OpenBill</h1>
+    </div>
+    
+    <h2>Înregistrare Companie</h2>
+    <p class="subtitle">Creează-ți contul în mai puțin de 2 minute</p>
+    
+    <div class="trial-badge">🎁 Primești 30 de zile Trial Gratuit</div>
+    
+    <div id="error" class="error hidden"></div>
+    <div id="success" class="success hidden"></div>
+    
+    <form id="registerForm">
+      <h3 style="margin-bottom: 1rem; color: #4F46E5;">Date Companie</h3>
+      
+      <div class="form-group">
+        <label for="companyName">Denumire Firmă *</label>
+        <input type="text" id="companyName" required placeholder="Ex: Fast Medical Distribution">
+      </div>
+      
+      <div class="form-group">
+        <label for="slug">URL Personalizat *</label>
+        <div class="slug-input-wrapper">
+          <input type="text" id="slug" class="slug-input" required 
+                 placeholder="ex: firma-mea" pattern="[a-z0-9-]+">
+          <span class="slug-suffix">.openbill.ro</span>
+        </div>
+        <div id="slugStatus" class="slug-status"></div>
+        <small style="color: #6b7280;">Folosește doar litere mici, cifre și cratimă</small>
+      </div>
+      
+      <div class="form-group">
+        <label for="cui">CUI/CIF *</label>
+        <input type="text" id="cui" required placeholder="Ex: RO12345678">
+      </div>
+      
+      <div class="form-group">
+        <label for="companyEmail">Email Companie *</label>
+        <input type="email" id="companyEmail" required placeholder="contact@firma.ro">
+      </div>
+      
+      <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e5e7eb;">
+      
+      <h3 style="margin-bottom: 1rem; color: #4F46E5;">Date Administrator</h3>
+      
+      <div class="row">
+        <div class="form-group">
+          <label for="firstName">Prenume</label>
+          <input type="text" id="firstName" placeholder="Ion">
+        </div>
+        <div class="form-group">
+          <label for="lastName">Nume</label>
+          <input type="text" id="lastName" placeholder="Popescu">
+        </div>
+      </div>
+      
+      <div class="form-group">
+        <label for="adminUsername">Username *</label>
+        <input type="text" id="adminUsername" required placeholder="ion.popescu">
+      </div>
+      
+      <div class="form-group">
+        <label for="adminPassword">Parolă *</label>
+        <input type="password" id="adminPassword" required minlength="6" 
+               placeholder="Minim 6 caractere">
+      </div>
+      
+      <div class="form-group">
+        <label for="confirmPassword">Confirmă Parola *</label>
+        <input type="password" id="confirmPassword" required placeholder="Repetă parola">
+      </div>
+      
+      <button type="submit" class="btn-primary" id="submitBtn">
+        Creează Compania
+      </button>
+    </form>
+    
+    <div id="successMessage" class="hidden" style="text-align: center; padding: 2rem;">
+      <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+      <h3>Compania a fost creată!</h3>
+      <p style="margin: 1rem 0; color: #6b7280;">
+        Poți accesa aplicația la:<br>
+        <a id="companyUrl" href="#" style="font-size: 1.2rem; font-weight: 600;"></a>
+      </p>
+      <a id="loginLink" href="#" class="btn-primary" style="display: inline-block; text-decoration: none;">
+        Intră în Aplicație
+      </a>
+    </div>
+    
+    <div class="back-link">
+      <a href="/">← Înapoi la pagina principală</a>
+    </div>
+  </div>
+  
+  <script>
+    const slugInput = document.getElementById('slug');
+    const slugStatus = document.getElementById('slugStatus');
+    let slugCheckTimeout;
+    
+    // Verificare disponibilitate slug
+    slugInput.addEventListener('input', (e) => {
+      const slug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      e.target.value = slug;
+      
+      clearTimeout(slugCheckTimeout);
+      if (slug.length < 3) {
+        slugStatus.innerHTML = '';
+        return;
+      }
+      
+      slugStatus.innerHTML = '<span style="color: #6b7280;">Se verifică...</span>';
+      
+      slugCheckTimeout = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/public/check-slug?slug=${slug}`);
+          const data = await res.json();
+          
+          if (data.available) {
+            slugStatus.innerHTML = '<span class="slug-available">✓ Disponibil</span>';
+          } else {
+            slugStatus.innerHTML = `<span class="slug-taken">✗ ${data.reason}</span>`;
+          }
+        } catch (err) {
+          slugStatus.innerHTML = '';
+        }
+      }, 500);
+    });
+    
+    // Submit form
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const errorDiv = document.getElementById('error');
+      const successDiv = document.getElementById('success');
+      const submitBtn = document.getElementById('submitBtn');
+      
+      errorDiv.classList.add('hidden');
+      successDiv.classList.add('hidden');
+      
+      // Validări
+      const password = document.getElementById('adminPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      
+      if (password !== confirmPassword) {
+        errorDiv.textContent = 'Parolele nu coincid';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Se procesează...';
+      
+      try {
+        const res = await fetch('/api/public/register-company', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            companyName: document.getElementById('companyName').value,
+            slug: document.getElementById('slug').value,
+            cui: document.getElementById('cui').value,
+            email: document.getElementById('companyEmail').value,
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            adminUsername: document.getElementById('adminUsername').value,
+            adminPassword: password
+          })
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          document.getElementById('registerForm').classList.add('hidden');
+          document.getElementById('successMessage').classList.remove('hidden');
+          document.querySelector('.back-link').classList.add('hidden');
+          document.getElementById('companyUrl').textContent = data.url;
+          document.getElementById('companyUrl').href = data.url;
+          document.getElementById('loginLink').href = data.url;
+        } else {
+          errorDiv.textContent = data.error || 'Eroare la înregistrare';
+          errorDiv.classList.remove('hidden');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Creează Compania';
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Eroare de conexiune. Încearcă din nou.';
+        errorDiv.classList.remove('hidden');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Creează Compania';
+      }
+    });
+  </script>
+</body>
+</html>
