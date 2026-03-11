@@ -16,13 +16,14 @@ async function createDatabase(dbName) {
   }
 
   // Parse URL pentru a extrage numele bazei master
-  const match = masterUrl.match(/^(postgres:\/\/)([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/);
+  // Acceptă atât postgres:// cât și postgresql://
+  const match = masterUrl.match(/^(postgres(?:ql)?:\/\/)([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/);
   if (!match) {
-    throw new Error('DATABASE_URL invalid');
+    throw new Error('DATABASE_URL invalid: ' + masterUrl.replace(/:[^:@]+@/, ':****@'));
   }
 
   const [, protocol, user, pass, host, port] = match;
-  const masterDbName = match[6]; // baza de date master (ex: openbill_master)
+  const masterDbName = match[6]; // baza de date master (ex: railway)
   
   // Conectare la postgres default pentru a putea crea DB nou
   const adminUrl = `${protocol}${user}:${pass}@${host}:${port}/postgres`;
@@ -54,11 +55,16 @@ async function createDatabase(dbName) {
 async function runMigrations(dbName) {
   const sql = fs.readFileSync(SCHEMA_FILE, 'utf8');
   
-  // Împarte SQL în statements individuale
-  const statements = sql
+  // Elimină comentariile și împarte în statements
+  const sqlWithoutComments = sql
+    .split('\n')
+    .filter(line => !line.trim().startsWith('--'))
+    .join('\n');
+  
+  const statements = sqlWithoutComments
     .split(';')
     .map(s => s.trim())
-    .filter(s => s.length > 0 && !s.startsWith('--'));
+    .filter(s => s.length > 0);
 
   const pool = tenantDb.getTenantPool(dbName);
 

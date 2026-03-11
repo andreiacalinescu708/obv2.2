@@ -2,25 +2,30 @@
 const masterDb = require('../db-master');
 
 async function tenantMiddleware(req, res, next) {
-  // Skip pentru rutele master (landing, superadmin, înregistrare)
-  const skipPaths = ['/api/superadmin', '/api/register-company', '/api/check-slug'];
+  // Skip pentru rutele master (landing, superadmin, înregistrare, login)
+  const skipPaths = ['/api/superadmin', '/api/register-company', '/api/check-slug', '/api/login'];
   if (skipPaths.some(path => req.path.startsWith(path))) {
     return next();
   }
 
-  // Extrage subdomeniul din host
-  const host = req.headers.host || '';
+  // Extrage subdomeniul din host (îndepărtează portul dacă există)
+  const hostWithPort = req.headers.host || '';
+  const host = hostWithPort.split(':')[0]; // Îndepărtează portul (ex: fmd.localhost:3000 -> fmd.localhost)
   const mainDomain = process.env.MAIN_DOMAIN || 'openbill.ro';
   
   let slug = null;
   
   if (host.includes('.')) {
     const parts = host.split('.');
-    // Dacă e subdomeniu (fmd.openbill.ro)
-    if (parts.length >= 2 && host.endsWith(mainDomain)) {
+    // Dacă e subdomeniu (fmd.openbill.ro sau fmd.localhost)
+    const isMainDomain = host.endsWith(mainDomain) || 
+                         host.includes('localhost') || 
+                         host.includes('127.0.0.1');
+    
+    if (parts.length >= 2 && isMainDomain) {
       const potentialSlug = parts[0];
       // Exclude www și altele generice
-      if (potentialSlug !== 'www' && potentialSlug !== 'app') {
+      if (potentialSlug !== 'www' && potentialSlug !== 'app' && potentialSlug !== 'localhost' && potentialSlug !== '127') {
         slug = potentialSlug;
       }
     }

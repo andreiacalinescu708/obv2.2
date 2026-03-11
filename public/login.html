@@ -147,17 +147,44 @@
     // Detectează compania din URL
     const host = window.location.hostname;
     const parts = host.split('.');
-    const slug = parts.length >= 2 ? parts[0] : null;
     
-    if (slug && slug !== 'www' && slug !== 'openbill') {
+    // Pentru localhost: fmd.localhost -> fmd e slug, localhost e domeniu
+    // Pentru openbill.ro: fmd.openbill.ro -> fmd e slug
+    // Pentru railway: extraordinary-flow...up.railway.app -> railway.app e domeniu, extraordinary e slug
+    let slug = null;
+    let isMainDomain = false;
+    
+    if (host === 'localhost' || host === '127.0.0.1') {
+      isMainDomain = true;
+    } else if (host.includes('railway.app')) {
+      // Pe railway fără subdomeniu = main domain
+      const subdomainParts = host.split('.');
+      if (subdomainParts.length >= 4 && subdomainParts[0] !== 'www') {
+        slug = subdomainParts[0];
+        isMainDomain = false;
+      } else {
+        isMainDomain = true;
+      }
+    } else if (parts.length >= 3 && parts[0] !== 'www') {
+      // fmd.openbill.ro
+      slug = parts[0];
+      isMainDomain = false;
+    } else if (parts.length === 2 && parts[1] === 'localhost' && parts[0] !== 'www') {
+      // fmd.localhost (special case)
+      slug = parts[0];
+      isMainDomain = false;
+    } else if (parts.length === 2) {
+      // openbill.ro sau localhost (fără subdomeniu)
+      isMainDomain = true;
+    } else {
+      isMainDomain = true;
+    }
+    
+    if (slug) {
       document.getElementById('companyName').textContent = slug.toUpperCase();
     } else {
       document.getElementById('companyName').textContent = 'OpenBill';
     }
-    
-    // Detectăm dacă suntem pe domeniul principal sau subdomeniu companie
-    const isMainDomain = !slug || slug === 'www' || slug === 'openbill' || 
-                         host.includes('railway.app') || host.includes('localhost');
     
     // Login
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
@@ -170,9 +197,9 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Se procesează...';
       
-      // Alegem endpoint-ul în funcție de domeniu
-      const loginUrl = isMainDomain ? '/api/superadmin/login' : '/api/login';
-      const redirectUrl = isMainDomain ? '/superadmin.html' : '/dashboard.html';
+      // Folosim login universal pentru toate cazurile
+      const loginUrl = '/api/login';
+      let redirectUrl = null; // Va veni de la server
       
       try {
         const res = await fetch(loginUrl, {
@@ -187,7 +214,8 @@
         const data = await res.json();
         
         if (res.ok && (data.ok || data.success)) {
-          window.location.href = redirectUrl;
+          // Folosește redirect URL de la server sau default
+          window.location.href = data.redirectUrl || '/admin.html';
         } else {
           errorDiv.textContent = data.error || 'Eroare la autentificare';
           errorDiv.classList.remove('hidden');

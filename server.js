@@ -18,6 +18,7 @@ const publicRoutes = require("./routes/public");
 const invitationRoutes = require("./routes/invitations");
 const settingsRoutes = require("./routes/settings");
 const setupRoutes = require("./routes/setup");
+const universalLoginRoutes = require("./routes/universal-login");
 
 const app = express();
 
@@ -30,6 +31,10 @@ app.use(express.static("public"));
 
 // Configurare sesiune
 app.set("trust proxy", 1);
+
+const isProduction = process.env.NODE_ENV === 'production';
+const mainDomain = process.env.MAIN_DOMAIN || 'openbill.ro';
+
 app.use(session({
   name: "openbill.sid",
   secret: process.env.SESSION_SECRET || "schimba-asta-cu-o-cheie-lunga-si-puternica",
@@ -37,8 +42,9 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === 'production',
+    sameSite: isProduction ? "none" : "lax",
+    secure: isProduction, // true în producție (HTTPS), false local
+    domain: isProduction ? `.${mainDomain}` : undefined, // wildcard subdomenii în producție
     maxAge: 24 * 60 * 60 * 1000 // 24 ore
   }
 }));
@@ -46,6 +52,7 @@ app.use(session({
 // ===== ROUTES PUBLICE (fără tenant) - ÎNAINTE de middleware tenant =====
 app.use("/api/setup", setupRoutes);
 app.use("/api/superadmin", superadminRoutes);
+app.use("/api/login", universalLoginRoutes); // Login universal
 app.use("/api/public", publicRoutes);
 
 // Middleware tenant - detectează compania după subdomeniu
@@ -59,7 +66,7 @@ function tq(req) {
   if (!req.tenant) {
     throw new Error("Tenant nu este setat");
   }
-  return (sql, params) => tenantDb.q(req.tenant.dbName, sql, params);
+  return (sql, params) => tenantDb.q(req.tenant.dbName, sql, params, req.tenant.slug);
 }
 
 // ===== AUTH PENTRU TENANT =====
@@ -67,126 +74,27 @@ function tq(req) {
 // Verificare sesiune
 app.get("/api/me", async (req, res) => {
   if (!req.session?.user) return res.json({ loggedIn: false });
+  
+  // Dacă e superadmin, returnează direct
+  if (req.session.user.role === 'superadmin') {
+    return res.json({ 
+      loggedIn: true, 
+      user: req.session.user,
+      isSuperAdmin: true
+    });
+  }
+  
+  // Pentru useri normali, returnează info despre companie
+  const company = await masterDb.getCompanyBySlug(req.session.user.companySlug);
+  
   res.json({ 
     loggedIn: true, 
     user: req.session.user,
-    tenant: req.tenant ? { name: req.tenant.name, slug: req.tenant.slug } : null
+    company: company ? { name: company.name, slug: company.slug } : null
   });
 });
 
-// Login (tenant-specific)
-app.post("/api/login", async (req, res) => {
-  try {
-    if (!req.tenant) {
-      return res.status(400).json({ error: "Acces doar prin subdomeniu companie" });
-    }
-
-    const { username, password } = req.body;
-    
-    const r = await tq(req)(`
-      SELECT id, username, password_hash, email, first_name, last_name, 
-             role, function, email_verified, active, is_approved,
-             failed_attempts, unlock_at, last_failed_at
-      FROM users WHERE username = $1 LIMIT 1
-    `, [username]);
-
-    const u = r.rows[0];
-    if (!u) return res.status(401).json({ error: "User sau parolă greșită" });
-
-    const now = new Date();
-
-    // Reset counter după 30 min de inactivitate
-    if (u.failed_attempts > 0 && u.last_failed_at) {
-      const lastFail = new Date(u.last_failed_at);
-      const thirtyMinAgo = new Date(now.getTime() - 30 * 60000);
-      
-      if (lastFail < thirtyMinAgo) {
-        await tq(req)(`
-          UPDATE users SET failed_attempts = 0, unlock_at = null, last_failed_at = null 
-          WHERE id = $1
-        `, [u.id]);
-        u.failed_attempts = 0;
-        u.unlock_at = null;
-      }
-    }
-
-    // Verificare blocare
-    if (u.failed_attempts >= 3 && u.unlock_at) {
-      const unlockTime = new Date(u.unlock_at);
-      if (unlockTime > now) {
-        const minutesLeft = Math.ceil((unlockTime - now) / 60000);
-        return res.status(403).json({ 
-          locked: true,
-          minutesLeft,
-          message: `Cont blocat. Mai așteaptă ${minutesLeft} minute.` 
-        });
-      } else {
-        await tq(req)(`
-          UPDATE users SET failed_attempts = 0, unlock_at = null, last_failed_at = null 
-          WHERE id = $1
-        `, [u.id]);
-        u.failed_attempts = 0;
-      }
-    }
-
-    if (!u.active) return res.status(401).json({ error: "User sau parolă greșită" });
-    if (!u.is_approved) {
-      return res.status(403).json({ pending: true, message: "Cont în așteptare" });
-    }
-
-    const ok = await bcrypt.compare(password, u.password_hash);
-    
-    if (!ok) {
-      const newAttempts = (u.failed_attempts || 0) + 1;
-      
-      if (newAttempts >= 3) {
-        const unlockAt = new Date(now.getTime() + 30 * 60000);
-        await tq(req)(`
-          UPDATE users SET failed_attempts = $1, last_failed_at = NOW(), unlock_at = $2 
-          WHERE id = $3
-        `, [newAttempts, unlockAt, u.id]);
-        
-        return res.status(403).json({ 
-          locked: true, 
-          minutesLeft: 30,
-          message: "Cont blocat pentru 30 minute după 3 încercări eșuate." 
-        });
-      } else {
-        await tq(req)(`
-          UPDATE users SET failed_attempts = $1, last_failed_at = NOW() WHERE id = $2
-        `, [newAttempts, u.id]);
-        
-        return res.status(401).json({ 
-          error: "User sau parolă greșită",
-          attemptsLeft: 3 - newAttempts 
-        });
-      }
-    }
-
-    // Login reușit
-    await tq(req)(`
-      UPDATE users SET failed_attempts = 0, unlock_at = null, last_failed_at = null 
-      WHERE id = $1
-    `, [u.id]);
-
-    req.session.user = { 
-      id: u.id, 
-      username: u.username,
-      email: u.email,
-      firstName: u.first_name,
-      lastName: u.last_name,
-      role: u.role,
-      function: u.function,
-      emailVerified: u.email_verified
-    };
-
-    res.json({ ok: true, user: req.session.user });
-    
-  } catch (e) {
-    console.error("LOGIN error:", e);
-    res.status(500).json({ error: "Eroare login" });
-  }
-});
+// Login universal - vezi /api/login din routes/universal-login.js
 
 // Logout
 app.post("/api/logout", (req, res) => {

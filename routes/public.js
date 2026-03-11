@@ -109,18 +109,27 @@ router.post('/register-company', async (req, res) => {
       WHERE username = $4
     `, [firstName || '', lastName || '', email, adminUsername]);
 
-    // Trimite email de bun venit
-    const loginUrl = `https://${slug}.${process.env.MAIN_DOMAIN || 'openbill.ro'}`;
-    await sendEmail({
-      to: email,
-      template: 'welcome',
-      data: {
-        username: adminUsername,
-        firstName,
-        companyName,
-        loginUrl
-      }
-    });
+    // Trimite email de bun venit (opțional, nu blochează înregistrarea)
+    // Pentru testare locală folosim localhost, în producție domeniul real
+    const isLocalhost = req.headers.host.includes('localhost') || req.headers.host.includes('127.0.0.1');
+    const loginUrl = isLocalhost 
+      ? `http://${slug}.localhost:3000`
+      : `https://${slug}.${process.env.MAIN_DOMAIN || 'openbill.ro'}`;
+    try {
+      await sendEmail({
+        to: email,
+        template: 'welcome',
+        data: {
+          username: adminUsername,
+          firstName,
+          companyName,
+          loginUrl
+        }
+      });
+    } catch (emailErr) {
+      console.log('Email de bun venit nu a putut fi trimis:', emailErr.message);
+      // Continuă fără eroare
+    }
 
     res.json({
       success: true,

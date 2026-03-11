@@ -415,11 +415,15 @@
         const res = await fetch('/api/me');
         const data = await res.json();
         
-        if (!data.loggedIn || data.user.role !== 'admin') {
-          alert('Acces interzis! Doar administratorii pot vedea această pagină.');
-          window.location.href = 'index.html';
+        if (!data.loggedIn) {
+          alert('Trebuie să te autentifici pentru a vedea această pagină.');
+          window.location.href = 'login.html';
           return;
         }
+        
+        // Salvează info user în window pentru folosire ulterioară
+        window.currentUser = data.user;
+        window.currentCompany = data.company;
         
         // Încarcă datele inițiale (doar pentru tab-ul activ)
         loadPending();

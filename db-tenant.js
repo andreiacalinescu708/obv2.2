@@ -19,9 +19,11 @@ function buildTenantDbUrl(dbName) {
 }
 
 // Obține sau creează pool pentru un tenant
-function getTenantPool(dbName) {
-  if (tenantPools.has(dbName)) {
-    return tenantPools.get(dbName);
+function getTenantPool(dbName, schemaName = null) {
+  const cacheKey = schemaName ? `${dbName}:${schemaName}` : dbName;
+  
+  if (tenantPools.has(cacheKey)) {
+    return tenantPools.get(cacheKey);
   }
 
   const connectionString = buildTenantDbUrl(dbName);
@@ -34,13 +36,20 @@ function getTenantPool(dbName) {
     ssl: { rejectUnauthorized: false }
   });
 
-  tenantPools.set(dbName, pool);
+  // Setează search_path pentru toate conexiunile noi
+  if (schemaName) {
+    pool.on('connect', (client) => {
+      client.query(`SET search_path TO ${schemaName}, public`);
+    });
+  }
+
+  tenantPools.set(cacheKey, pool);
   return pool;
 }
 
 // Query pe tenant DB
-async function q(dbName, text, params) {
-  const pool = getTenantPool(dbName);
+async function q(dbName, text, params, schemaName = null) {
+  const pool = getTenantPool(dbName, schemaName);
   return pool.query(text, params);
 }
 
