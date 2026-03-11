@@ -94,7 +94,7 @@ async function ensureMasterTables() {
 
 // Creare superadmin default (alex1)
 async function ensureDefaultSuperAdmin() {
-  if (!masterPool) return;
+  if (!getMasterPool()) return;
 
   const r = await q("SELECT COUNT(*)::int AS n FROM superadmins");
   if (r.rows[0].n > 0) return;
