@@ -17,6 +17,7 @@ const superadminRoutes = require("./routes/superadmin");
 const publicRoutes = require("./routes/public");
 const invitationRoutes = require("./routes/invitations");
 const settingsRoutes = require("./routes/settings");
+const setupRoutes = require("./routes/setup");
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use(session({
 }));
 
 // ===== ROUTES PUBLICE (fără tenant) - ÎNAINTE de middleware tenant =====
+app.use("/api/setup", setupRoutes);
 app.use("/api/superadmin", superadminRoutes);
 app.use("/api/public", publicRoutes);
 
