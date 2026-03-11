@@ -42,12 +42,13 @@ app.use(session({
   }
 }));
 
-// Middleware tenant - detectează compania după subdomeniu
-app.use(tenantMiddleware);
-
-// ===== ROUTES PUBLICE (fără tenant) =====
+// ===== ROUTES PUBLICE (fără tenant) - ÎNAINTE de middleware tenant =====
 app.use("/api/superadmin", superadminRoutes);
 app.use("/api/public", publicRoutes);
+
+// Middleware tenant - detectează compania după subdomeniu
+// Rulează după rutele publice pentru a nu bloca endpoint-urile publice
+app.use(tenantMiddleware);
 
 // ===== ROUTES CARE NECESITĂ TENANT =====
 

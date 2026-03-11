@@ -11,7 +11,7 @@ function buildTenantDbUrl(dbName) {
 
   // Extrage componentele din URL-ul master
   // Format: postgres://user:pass@host:port/database
-  const match = masterUrl.match(/^(postgres:\/\/)([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/);
+  const match = masterUrl.match(/^(postgres(?:ql)?:\/\/)([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/);
   if (!match) return null;
 
   const [, protocol, user, pass, host, port] = match;
